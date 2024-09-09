@@ -16,13 +16,10 @@ class SensorModel extends Model {
 
      protected $useTimestamps = true;
      protected $createdField = 'sens_fecha';
-     //agregar sens hora
      protected $updatedField = 'sens_hora';
 
     protected $validationRules = [];
     protected $validationMessages = [];
     protected $skipValidation = false;
 }
-
-
 ?>

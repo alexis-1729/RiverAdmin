@@ -17,11 +17,14 @@ class Monitoreo extends BaseController
         $this->sesion = session();
     }
 
-    ///funcion para obtener de la base de datos los usarios activos
+   
     public function index($active = 1)
     {
+        //condicional para comprobar que este iniciado sesion para poder entrar a la ruta
+        //de otra manera redirigir a la pagina login
         if(!isset($this->sesion->user_usuario)){return redirect()->to(base_url());}
         
+        //conexion a la base de datos
         $db =\Config\Database::connect();
         $sql = $db->table('pmonitoreo');
         $sql -> select('pmonitoreo.monitoreo_id, pmonitoreo.monitoreo_nombre, pmonitoreo.riverubi_id, 

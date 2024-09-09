@@ -16,9 +16,9 @@ $routes = Services::routes();
  $routes -> set404Override();
 
 $routes->get('/', 'Registro::login');
-$routes -> setAutoRoute(true);
+$routes -> setAutoRoute(true); 
 
  
- //$routes->get('registro/usersAdmin.php','UsersT::index');
+// $routes->get('registro/usersAdmin.php','UsersT::index');
 //  $routes->get('/dispositivosR.php','Dispositivos::index');
-//  $routes->get('/rios.php','Rios::index');
+ // $routes->get('/monitoreo.php','Monitoreo::index');

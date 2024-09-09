@@ -27,9 +27,9 @@ class Database extends Config
     public array $default = [
         'DSN'          => '',
         'hostname'     => 'localhost',
-        'username'     => 'root',
-        'password'     => '',
-        'database'     => 'riversb',
+        'username'     => 'ingetec1_riversf',
+        'password'     => 'singer22@$?',
+        'database'     => 'ingetec1_RiverSafe',
         'DBDriver'     => 'MySQLi',
         'DBPrefix'     => '',
         'pConnect'     => false,
