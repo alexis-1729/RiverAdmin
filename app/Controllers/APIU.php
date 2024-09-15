@@ -4,6 +4,7 @@ namespace App\Controllers;
 use App\Controllers\BaseController;
 use App\Models\APIUModel;
 use App\Models\DispositivosModel;
+use App\Models\MensajeModel;
 use App\Models\RiosModel;
 use App\Models\SensorModel;
 use App\Models\UbiModel;
@@ -19,6 +20,7 @@ protected $dispositivos;
 protected $sensor;
 protected $ubic;
 protected $userpos;
+protected $mensajes;
 public function __construct()
 {
    
@@ -31,6 +33,7 @@ public function __construct()
     $this->sensor = new SensorModel;
     $this->ubic = new UbiModel();
     $this->userpos = new UserposModel();
+    $this->mensajes = new MensajeModel();
     $this->reglasR = [
         'username'=> 'required',
         'password'=> 'required'
@@ -538,7 +541,93 @@ public function associateToken() {
         return $result;
     }
 
+    //-----------------------------------------------------
+    public function crearMensaje(){
+         if($this->request->getMethod() == 'POST'){
+             $id = $this->request->getVar('user');
+             $rio = $this->request ->getVar('rio');
+             $mensaje = $this->request->getVar('mensaje');
+             $titulo = $this->request->getVar('titulo');
+             $dat= $this->api->where('user_rioid', $rio)->first();
+           
+              if($dat != null){
+                 $this->mensajes->save(['user_id' => $id, 
+                 'user_admin' =>$dat['user_id'], 
+                 'mensaje' => $mensaje,
+                'titulo' => $titulo]);
+                 $response = array(
+                     'status' => 'success',
+                     'message' => 'Mensaje registrado'
+                 );
+                }else{
+                    $response = array(
+                        'status' => 'error',
+                        'message' => 'Error usuario no encontrado'
+                    );
+                }
+         }else{
+             $response = array(
+                 'status' => 'error',
+                 'message' => 'Error en el metodo post'
+             );
+         }
+         return $this->response->setJSON($response);
+    }
 
+    public function listaMensaje(){
+        if($this->request->getMethod() == 'POST'){
+            $id = $this->request->getVar('admin');
+            $datos = $this ->mensajes ->where('user_id', $id)->findAll();
+            if($datos != NULL){
+                $response = array(
+                        'status' => 'success',
+                        'message' => 'Operacion getMensajes correcta',
+                        'data' => $datos
+                    );
+            }else{
+                $response = array(
+                    'status' => 'error',
+                    'message' => 'id no encontrado'
+                );
+            }
+        }else{
+            $response = array(
+                'status' => 'error',
+                'message' => 'Error en el metodo post'
+            );
+        }
+        return $this->response->setJSON($response);
+    }
 
+    public function eliminarMensaje(){
+
+    }
+
+    public function responderMensaje(){
+        if($this->request->getMethod() == 'POST'){
+            $id = $this->request->getVar('id');
+            $datos = $this ->mensajes ->where('id_mensaje', $id)->first();
+            if($datos != NULL){
+                //si existe remplazar con los nuevos datos
+                $this->mensajes->update($id,[ 
+                'revisado' => 1]);
+                $response = array(
+                    'status' => 'success',
+                    'message' => 'Mensaje revisado'
+                );
+            }else{
+                $response = array(
+                    'status' => 'error',
+                    'message' => 'Error mensaje no encontrado'
+                );
+            }
+        }else{
+            $response = array(
+                'status' => 'error',
+                'message' => 'Error en el metodo post'
+            );
+        }
+        return $this->response->setJSON($response);
+    }
 }
 ?>
