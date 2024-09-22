@@ -21,6 +21,7 @@ protected $sensor;
 protected $ubic;
 protected $userpos;
 protected $mensajes;
+protected $sesion;
 public function __construct()
 {
    
@@ -34,6 +35,7 @@ public function __construct()
     $this->ubic = new UbiModel();
     $this->userpos = new UserposModel();
     $this->mensajes = new MensajeModel();
+    $this->sesion=session();
     $this->reglasR = [
         'username'=> 'required',
         'password'=> 'required'
@@ -86,9 +88,11 @@ public function login(){
                         'user_nombre' => $datos['user_nombre'],
                         'user_email' => $datos['user_email'],
                         'user_apellido' => $datos['user_apellido'],
-                        'token' => bin2hex(openssl_random_pseudo_bytes(16)) // Método para generar un token
+                        'fcm_token' => bin2hex(openssl_random_pseudo_bytes(16)) // Método para generar un token
                     )
                 );
+                $session = session();
+                $session ->set($response['data']);
             }else{
                 $response = array(
                     'status' => 'error',
@@ -114,6 +118,16 @@ public function login(){
     );
   }
   return $this->response->setJSON($response);
+}
+
+public function logout(){
+    $sesion = session();
+    $sesion ->destroy();
+    $response = array(
+        'status' => 'success',
+        'message' => 'sesion cerrada'
+    );
+    return $this->response->setJSON($response);
 }
 
 public function obtenerRios(){
@@ -327,11 +341,11 @@ public function getDispositivos(){
             'sens_vel' => $this->request->getVar('sens_vel'),
             'ard_id' =>$this->request->getVar('ard_id')
         ]);
-        $response = array(
-            'status' => 'success',
-            'message' => 'Operacion saveSensor correcta'
-        );
-        return $this->response->setJSON($response);
+        // $response = array(
+        //     'status' => 'success',
+        //     'message' => 'Operacion saveSensor correcta'
+        // );
+        // return $this->response->setJSON($response);
     }
 
     //actualiza o guarda posicion del usuario

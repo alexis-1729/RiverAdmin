@@ -75,6 +75,7 @@ class Dispositivos extends BaseController
     }
 
     public function insertar(){
+        if($this->request->getMethod()=='POST'){
         $this-> users ->save([
         'circuito_nombre' => $this->request->getPost('circuito_nombre'), 
         'pmonitoreo_id' =>  $this->request->getPost('pmonitoreo_id'), 
@@ -83,6 +84,9 @@ class Dispositivos extends BaseController
         'sensor_id' => 1
         ]);
         return redirect()->to(base_url().'/dispositivos');
+    }else{
+        $this->nuevo();
+    }
     }
 
     public function editar($circuito_id){

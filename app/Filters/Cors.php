@@ -27,3 +27,4 @@ class Cors implements FilterInterface
         // No action needed after the request
     }
 }
+

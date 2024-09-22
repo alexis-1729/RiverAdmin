@@ -16,8 +16,8 @@ class App extends BaseConfig
      *
      * E.g., http://example.com/
      */
-    public string $baseURL = 'https://ingetec-itsz.com/Riversafe/public';
-
+    public string $baseURL = 'http://localhost/riversf/public';
+    // 'https://ingetec-itsz.com/Riversafe/public'
     /**
      * Allowed Hostnames in the Site URL other than the hostname in the baseURL.
      * If you want to accept multiple Hostnames, set this.
