@@ -26,10 +26,10 @@ class Database extends Config
      */
     public array $default = [
         'DSN'          => '',
-        'hostname'     => '65.99.205.169',
-        'username'     => 'ingetec1_riversf',
-        'password'     => 'singer22@$?',
-        'database'     => 'ingetec1_RiverSafe',
+        'hostname'     =>  'localhost',//'65.99.205.169',
+        'username'     => 'root',//'ingetec1_riversf',
+        'password'     => '',//'singer22@$?',
+        'database'     => 'riversb',//'ingetec1_RiverSafe',
         'DBDriver'     => 'MySQLi',
         'DBPrefix'     => '',
         'pConnect'     => false,

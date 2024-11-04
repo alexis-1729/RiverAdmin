@@ -9,7 +9,7 @@ use App\Models\RiosModel;
 use App\Models\SensorModel;
 use App\Models\UbiModel;
 use App\Models\UserposModel;
-
+use Firebase\JWT\JWT;
 
 class APIU extends BaseController{
 protected $reglasR;
@@ -96,7 +96,7 @@ public function login(){
             }else{
                 $response = array(
                     'status' => 'error',
-                    'message' => 'Contraseña o correo incorrectos'
+                    'message' => 'Contraseña incorrecta'
                 );
             }  
        }else{
@@ -106,6 +106,7 @@ public function login(){
         );
        }
     }else{
+        //enviar errores
         $response = array(
             'status' => 'error',
             'message' => 'Llene los requerimientos'
@@ -114,7 +115,7 @@ public function login(){
   }else{
     $response = array(
         'status' => 'error',
-        'message' => 'Erro en el post'
+        'message' => 'Error en el post'
     );
   }
   return $this->response->setJSON($response);
@@ -468,11 +469,22 @@ public function getDispositivos(){
             return $this->response->setJSON($response);
         }
 //---------------------------------------------------------------------------
-
+//Asginacion de token 
 public function associateToken() {
-    if($this->request->getMethod() == 'POST'){
     $userId = $this->request->getVar('userId');
-    $token = $this->request->getVar('token');
+   // $token =$this->request->getVar('token');
+    //---------------------------------
+    $key = "ramanu";  // Define una clave secreta segura para firmar el token
+    $issuedAt = time();        // Tiempo actual
+    $expirationTime = $issuedAt + 3600;  // El token expirará en 1 hora
+    $payload = array(
+        'userId' => $userId,
+        'iat' => $issuedAt,      // Tiempo en el que fue generado
+        'exp' => $expirationTime // Tiempo de expiración
+    );
+
+    // Genera el JWT con la clave secreta
+    $token = JWT::encode($payload, $key, 'HS256');
 
    $datos = $this->api->where('user_id', $userId)->first();
    if($datos != null){
@@ -483,16 +495,14 @@ public function associateToken() {
     
         $response = array(
             'status' => 'success',
-            'message' => 'Operacion getUserest correcta'    
+            'message' => 'Operacion token correcta'    
           );
         
         return $this->response->setJSON($response);
    }else{
     return $this->response->setJSON(['status' => 'error']);
    }
-  }else{
-    return $this->response->setJSON(['status' => 'error en el post']);
-  }
+  
 }
 
   //Envio de notificaciones
@@ -503,27 +513,40 @@ public function associateToken() {
       $messageBody = $this->request->getVar('body');
 
 
+
       // Obtener los tokens FCM de los usuarios
       $users = $this->api->where('user_id', $userIds)->findAll();
-
+    $mensaje = "exito";
+    if($users != null){
       foreach ($users as $user) {
           if (!empty($user['fcm_token'])) {
               // Enviar notificación push a cada token
-              $this->sendNotification($user['fcm_token'], $messageTitle, $messageBody);
+              if($this->sendNotification($user['fcm_token'], $messageTitle, $messageBody) == FALSE){
+                $mensaje = 'No se pudo realizar la operacion noti';
+              }
           }
       }
       $response = array(
         'status' => 'success',
-        'message' => 'Notificaciones enviadas con éxito'
+        'message' => $mensaje
     );
+  }else{
+    $response = array(
+      'status' => 'success',
+      'message' => 'no se econtraron usuarios'  
+    );
+  }
 
       return $this->response->setJSON($response);
   }
 
-  private function sendNotification($to, $title, $body)
+  public function sendNotification($to, $title, $body)
     {
-        $jwt = generate_fcm_jwt('c:\Users\alexis-1729\Documents\keyAPI\riversafe-4bb22-1f66a3ba0030.json');
-    
+       // $filePath = APPPATH . '../config/serviceAccountKey.json';
+        $filePath = 'c:/Users/alexis-1729/Documents/keyAPI/riversafe-4bb22-1f66a3ba0030.json';
+        if($filePath != null){
+        $jwt = generate_fcm_jwt($filePath);
+        //'c:\Users\alexis-1729\Documents\keyAPI\riversafe-4bb22-1f66a3ba0030.json'
         $headers = array(
             'Authorization: Bearer ' . $jwt,
             'Content-Type: application/json'
@@ -552,6 +575,9 @@ public function associateToken() {
         }
     
         curl_close($ch);
+    }else{
+        $result = FALSE;
+    }
         return $result;
     }
 

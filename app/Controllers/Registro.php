@@ -407,6 +407,7 @@ class Registro extends BaseController
                }
         }else{
             $data =['validation' => $this->validator];
+            
             echo view('login', $data);
         }
     }
