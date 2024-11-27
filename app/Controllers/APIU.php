@@ -4,10 +4,12 @@ namespace App\Controllers;
 use App\Controllers\BaseController;
 use App\Models\APIUModel;
 use App\Models\DispositivosModel;
+use App\Models\MensajeModel;
 use App\Models\RiosModel;
 use App\Models\SensorModel;
 use App\Models\UbiModel;
 use App\Models\UserposModel;
+use Firebase\JWT\JWT;
 
 
 class APIU extends BaseController{
@@ -19,6 +21,8 @@ protected $dispositivos;
 protected $sensor;
 protected $ubic;
 protected $userpos;
+protected $mensajes;
+protected $sesion;
 public function __construct()
 {
    
@@ -31,6 +35,8 @@ public function __construct()
     $this->sensor = new SensorModel;
     $this->ubic = new UbiModel();
     $this->userpos = new UserposModel();
+    $this->mensajes = new MensajeModel();
+    $this->sesion=session();
     $this->reglasR = [
         'username'=> 'required',
         'password'=> 'required'
@@ -83,13 +89,15 @@ public function login(){
                         'user_nombre' => $datos['user_nombre'],
                         'user_email' => $datos['user_email'],
                         'user_apellido' => $datos['user_apellido'],
-                        'token' => bin2hex(openssl_random_pseudo_bytes(16)) // Método para generar un token
+                        'fcm_token' => bin2hex(openssl_random_pseudo_bytes(16)) // Método para generar un token
                     )
                 );
+                $session = session();
+                $session ->set($response['data']);
             }else{
                 $response = array(
                     'status' => 'error',
-                    'message' => 'Contraseña o correo incorrectos'
+                    'message' => 'Contraseña incorrecta'
                 );
             }  
        }else{
@@ -99,6 +107,7 @@ public function login(){
         );
        }
     }else{
+        //enviar errores
         $response = array(
             'status' => 'error',
             'message' => 'Llene los requerimientos'
@@ -107,10 +116,20 @@ public function login(){
   }else{
     $response = array(
         'status' => 'error',
-        'message' => 'Erro en el post'
+        'message' => 'Error en el post'
     );
   }
   return $this->response->setJSON($response);
+}
+
+public function logout(){
+    $sesion = session();
+    $sesion ->destroy();
+    $response = array(
+        'status' => 'success',
+        'message' => 'sesion cerrada'
+    );
+    return $this->response->setJSON($response);
 }
 
 public function obtenerRios(){
@@ -324,11 +343,11 @@ public function getDispositivos(){
             'sens_vel' => $this->request->getVar('sens_vel'),
             'ard_id' =>$this->request->getVar('ard_id')
         ]);
-        $response = array(
-            'status' => 'success',
-            'message' => 'Operacion saveSensor correcta'
-        );
-        return $this->response->setJSON($response);
+        // $response = array(
+        //     'status' => 'success',
+        //     'message' => 'Operacion saveSensor correcta'
+        // );
+        // return $this->response->setJSON($response);
     }
 
     //actualiza o guarda posicion del usuario
@@ -450,12 +469,23 @@ public function getDispositivos(){
             }
             return $this->response->setJSON($response);
         }
-//---------------------------------------------------------------------------
-
-public function associateToken() {
-    if($this->request->getMethod() == 'POST'){
+ //---------------------------------------------------------------------------
+ //Asginacion de token 
+  public function associateToken() {
     $userId = $this->request->getVar('userId');
-    $token = $this->request->getVar('token');
+   // $token =$this->request->getVar('token');
+    //---------------------------------
+    $key = "ramanu";  // Define una clave secreta segura para firmar el token
+    $issuedAt = time();        // Tiempo actual
+    $expirationTime = $issuedAt + 3600;  // El token expirará en 1 hora
+    $payload = array(
+        'userId' => $userId,
+        'iat' => $issuedAt,      // Tiempo en el que fue generado
+        'exp' => $expirationTime // Tiempo de expiración
+    );
+
+    // Genera el JWT con la clave secreta
+    $token = JWT::encode($payload, $key, 'HS256');
 
    $datos = $this->api->where('user_id', $userId)->first();
    if($datos != null){
@@ -466,16 +496,14 @@ public function associateToken() {
     
         $response = array(
             'status' => 'success',
-            'message' => 'Operacion getUserest correcta'    
+            'message' => 'Operacion token correcta'    
           );
         
         return $this->response->setJSON($response);
    }else{
     return $this->response->setJSON(['status' => 'error']);
    }
-  }else{
-    return $this->response->setJSON(['status' => 'error en el post']);
-  }
+  
 }
 
   //Envio de notificaciones
@@ -505,8 +533,9 @@ public function associateToken() {
 
   private function sendNotification($to, $title, $body)
     {
-        $jwt = generate_fcm_jwt('c:\Users\alexis-1729\Documents\keyAPI\riversafe-4bb22-1f66a3ba0030.json');
-    
+        $filePath = APPPATH . '../config/serviceAccountKey.json';
+        $jwt = generate_fcm_jwt($filePath);
+        //'c:\Users\alexis-1729\Documents\keyAPI\riversafe-4bb22-1f66a3ba0030.json'
         $headers = array(
             'Authorization: Bearer ' . $jwt,
             'Content-Type: application/json'
@@ -538,7 +567,176 @@ public function associateToken() {
         return $result;
     }
 
+    //-----------------------------------------------------
+    public function crearMensaje(){
+         if($this->request->getMethod() == 'POST'){
+             $id = $this->request->getVar('user');
+             $rio = $this->request ->getVar('rio');
+             $mensaje = $this->request->getVar('mensaje');
+             $titulo = $this->request->getVar('titulo');
+             $dat= $this->api->where('user_rioid', $rio)->first();
+           
+              if($dat != null){
+                 $this->mensajes->save(['user_id' => $id, 
+                 'user_admin' =>$dat['user_id'], 
+                 'mensaje' => $mensaje,
+                'titulo' => $titulo]);
+                 $response = array(
+                     'status' => 'success',
+                     'message' => 'Mensaje registrado'
+                 );
+                }else{
+                    $response = array(
+                        'status' => 'error',
+                        'message' => 'Error usuario no encontrado'
+                    );
+                }
+         }else{
+             $response = array(
+                 'status' => 'error',
+                 'message' => 'Error en el metodo post'
+             );
+         }
+         return $this->response->setJSON($response);
+    }
 
+    public function listaMensaje(){
+        if($this->request->getMethod() == 'POST'){
+            $id = $this->request->getVar('admin');
+            $datos = $this ->mensajes ->where('user_id', $id)->where('revisado')->findAll();
 
+            $user_ids = array_column($datos, 'user_id');
+            $user_ids = array_unique($user_ids);
+
+            $usernames = $this->api->where('user_id', $user_ids)->findAll();
+
+            $username_id =[];
+
+            foreach ($usernames as $us){
+                $username_id[$us['user_id']] = $us['user_usuario'];
+            }
+
+            foreach($datos as &$mensaje){
+                $user_id = $mensaje['user_id'];
+                $mensaje['username'] = isset($username_id[$user_id]) ? $username_id[$user_id] : 'Usuario desconocido';
+            }
+
+            if($datos != NULL){
+                $response = array(
+                        'status' => 'success',
+                        'message' => 'Operacion getMensajes correcta',
+                        'data' => $datos
+                    );
+            }else{
+                $response = array(
+                    'status' => 'error',
+                    'message' => 'id no encontrado'
+                );
+            }
+        }else{
+            $response = array(
+                'status' => 'error',
+                'message' => 'Error en el metodo post'
+            );
+        }
+        return $this->response->setJSON($response);
+    }
+
+    
+    public function eliminarMensaje(){
+
+    }
+
+    public function responderMensaje(){
+        if($this->request->getMethod() == 'POST'){
+            $id = $this->request->getVar('id');
+            $titulo = $this ->request ->getVar('titulo');
+            $mensaje = $this -> request ->getVar('mensaje');
+           
+            
+        }else{
+            $response = array(
+                'status' => 'error',
+                'message' => 'Error en el metodo post'
+            );
+        }
+        return $this->response->setJSON($response);
+    }
+    public function getName(){
+        if($this->request->getMethod() == 'POST'){
+            $id = $this->request->getVar('user_id');
+            $datos = $this ->api ->where('user_id', $id)->first();
+            if($datos != NULL){
+                //si existe remplazar con los nuevos datos
+                $this->mensajes->update($id,[ 
+                'revisado' => 1]);
+                $response = array(
+                    'status' => 'success',
+                    'message' => 'Usuario encontrado',
+                    'data' => array(
+                        'username' => $datos['user_usuario'],
+                        'user_rioid' => $datos['user_rioid'],
+                        // Método para generar un token
+                    )
+                );
+            }else{
+                $response = array(
+                    'status' => 'error',
+                    'message' => 'usuario no encontrado'
+                );
+            }
+        }else{
+            $response = array(
+                'status' => 'error',
+                'message' => 'Error en el metodo post'
+            );
+        }
+        return $this->response->setJSON($response);
+    }
+
+    public function mediaNiv(){
+        //------
+        $valores = [];
+        for($i = 0; $i < 5; $i++){
+            $aux = $this -> request -> getVar("sens_nivel$i");
+            if($aux != null)
+            $valores[] = (float) $aux;
+        }
+
+        $parametros = implode(" ", $valores);
+        $command = escapeshellcmd("python Scripts/media.py $parametros");
+
+        $output = shell_exec($command);
+
+        $result = json_decode($output, true);
+
+        if($result != null){
+            return $this->response->setJSON($result);
+        }else return $this ->response ->setJSON(['error' => 'Error en la ejecucion del script']);
+
+    }
+
+    
+
+    //---- Calculando la varianza
+
+    public function varianzaNiv(){
+        $datos = [];
+
+        for($i = 0; $i < 5; $i++){
+            $aux = $this -> request -> getVar("sens_nivel$i");
+            if($aux != null){
+                $datos [] = (float)$aux;
+            }
+        }
+
+        $parametros = implode(" ", $datos);
+        $command = escapeshellcmd("python Scripts/varianza.py $parametros");
+        $output = shell_exec($command);
+        $result = json_decode($output, true);
+        if($result != null){
+            return $this ->response ->setJSON($result);
+        }else return $this -> response ->setJSON(["error" => 'Error en la ejecucion del script']);
+    }
 }
 ?>
