@@ -570,27 +570,27 @@ public function getDispositivos(){
     //-----------------------------------------------------
     public function crearMensaje(){
          if($this->request->getMethod() == 'POST'){
+            //funcio de civil para crear y enviar mensaje a admin de rio 
              $id = $this->request->getVar('user');
              $rio = $this->request ->getVar('rio');
              $mensaje = $this->request->getVar('mensaje');
              $titulo = $this->request->getVar('titulo');
-             $dat= $this->api->where('user_rioid', $rio)->first();
-           
-              if($dat != null){
-                 $this->mensajes->save(['user_id' => $id, 
-                 'user_admin' =>$dat['user_id'], 
+            //identifico al admin de rio
+             $admin = $this ->api 
+            -> select('user_id')
+            -> where('user_rioid', $rio)
+            ->where('cuenta_id', 1)
+            -> first();
+
+                 $this->mensajes->save([
+                 'user_id' => $id, 
+                 'user_admin' =>$admin, 
                  'mensaje' => $mensaje,
-                'titulo' => $titulo]);
+                 'titulo' => $titulo]);
                  $response = array(
                      'status' => 'success',
                      'message' => 'Mensaje registrado'
                  );
-                }else{
-                    $response = array(
-                        'status' => 'error',
-                        'message' => 'Error usuario no encontrado'
-                    );
-                }
          }else{
              $response = array(
                  'status' => 'error',
@@ -602,24 +602,67 @@ public function getDispositivos(){
 
     public function listaMensaje(){
         if($this->request->getMethod() == 'POST'){
-            $id = $this->request->getVar('admin');
-            $datos = $this ->mensajes ->where('user_id', $id)->where('revisado')->findAll();
+            $id = $this->request->getVar('user');
+            $rio = $this ->request ->getvar('rio_id');
 
-            $user_ids = array_column($datos, 'user_id');
-            $user_ids = array_unique($user_ids);
+            //  verificar si el user es un admin
+            $admin = $this->api
+            -> select('user_id')
+            -> where('user_id', $id) 
+            -> where('cuenta_id', 1)
+            -> first();
 
-            $usernames = $this->api->where('user_id', $user_ids)->findAll();
+            //si es nulo no es admin
+            if($admin == null){
+            //si el user no es admin entonces busco el admin mediante el user
+            $admin = $this->api
+            -> select('user_id')
+            -> where('user_rioid', $rio) 
+            -> where('cuenta_id', 1)
+            -> first();
 
-            $username_id =[];
+            //encontrar los mensajes que tengan en comun el usuario y el admin al que pertence el rio
+            $datos = $this ->mensajes 
+            ->where('user_id', $id)
+            ->where('revisado', 1)
+            ->where('user_admin', $admin) 
+            ->findAll();
 
-            foreach ($usernames as $us){
-                $username_id[$us['user_id']] = $us['user_usuario'];
-            }
+            }else{
+            //encaso de ser admin que cargue todos los mensajes que contega el admin 
+            // $datos = $this ->mensajes 
+            // ->groupStart()
+            //     ->where('user_id', $id)
+            //     ->where('user_admin', $id)
+            // ->groupEnd()
+            // ->where('revisado', 1)
+            // ->findAll();
 
-            foreach($datos as &$mensaje){
-                $user_id = $mensaje['user_id'];
-                $mensaje['username'] = isset($username_id[$user_id]) ? $username_id[$user_id] : 'Usuario desconocido';
-            }
+            $datos = $this ->mensajes 
+            ->where('user_admin', $id)
+            ->where('revisado', 1)
+            ->findAll();
+        }
+
+            //obtengo los user_id de los mensajes
+             $user_ids = array_column($datos, 'user_id');
+             $user_ids = array_unique($user_ids);
+
+            
+             //obtengo el username con los user_id
+             $usernames = $this->api->whereIn('user_id', $user_ids)->findAll();
+
+              $username_id =[];
+
+              //asingno a cada user_id su username respectivo
+              foreach ($usernames as $us){
+                  $username_id[$us['user_id']] = $us['user_usuario'];
+              }
+
+              foreach($datos as &$mensaje){
+                  $user_id = $mensaje['user_id'];
+                 $mensaje['username'] = isset($username_id[$user_id]) ? $username_id[$user_id] : 'Usuario desconocido';
+              }
 
             if($datos != NULL){
                 $response = array(
@@ -641,18 +684,103 @@ public function getDispositivos(){
         }
         return $this->response->setJSON($response);
     }
+    //agregar la pagina de riversafe al river Admin
 
     
-    public function eliminarMensaje(){
+    public function experimentacion(){
 
+        $id = $this->request->getVar('user');
+        $rio = $this ->request ->getvar('rio_id');
+
+        //  verificar si el user es un admin
+        $admin = $this->api
+        -> select('user_id')
+        -> where('user_id', $id) 
+        -> where('cuenta_id', 1)
+        -> first();
+
+        //si es nulo no es admin
+        if($admin == null){
+        //si el user no es admin entonces busco el admin mediante el user
+        $admin = $this->api
+        -> select('user_id')
+        -> where('user_rioid', $rio) 
+        -> where('cuenta_id', 1)
+        -> first();
+
+        //encontrar los mensajes que tengan en comun el usuario y el admin al que pertence el rio
+        $datos = $this ->mensajes 
+        ->where('user_id', $id)
+        ->where('revisado', 1)
+        ->where('user_admin', $admin) 
+        ->findAll();
+
+        }else{
+        //encaso de ser admin que cargue todos los mensajes que contega el admin 
+       
+
+        $datos = $this ->mensajes 
+        ->where('user_admin', $id)
+        ->where('revisado', 1)
+        ->findAll();
     }
 
+        //obtengo los user_id de los mensajes
+         $user_ids = array_column($datos, 'user_id');
+         $user_ids = array_unique($user_ids);
+
+        
+         //obtengo el username con los user_id
+         $usernames = $this->api->whereIn('user_id', $user_ids)->findAll();
+
+          $username_id =[];
+
+          //asingno a cada user_id su username respectivo
+          foreach ($usernames as $us){
+              $username_id[$us['user_id']] = $us['user_usuario'];
+          }
+
+          foreach($datos as &$mensaje){
+              $user_id = $mensaje['user_id'];
+             $mensaje['username'] = isset($username_id[$user_id]) ? $username_id[$user_id] : 'Usuario desconocido';
+          }
+
+          foreach($datos as $mensajes){
+             echo $mensajes['username'];
+          }
+
+        
+
+
+    }
+   //respondiendo un mensjae añadir 
     public function responderMensaje(){
         if($this->request->getMethod() == 'POST'){
+            //id del mensaje al cual se le va a responder
             $id = $this->request->getVar('id');
+            //id del usuario quien lo envia
+            $user = $this ->request -> getVar('user_id');
+            //rio del cual genera el mensaje
+            $rio = $this -> request ->getVar('rio_id');
             $titulo = $this ->request ->getVar('titulo');
             $mensaje = $this -> request ->getVar('mensaje');
            
+           $dat = $this->api->where('user_rioid', $rio) -> where('cuenta_id', 1) -> first();
+           
+           if($dat != null){
+            $this -> mensajes -> save([
+                'mensaje' => $mensaje,
+                'user_id' => $user,
+                'user_admin' => $dat['user_id'],
+                'titulo' => $titulo,
+                'id_respond' => $id 
+                ]);
+
+                $response = array(
+                    'status' => 'success',
+                    'message' => 'Operacion respondewr mensaje correcta'
+                );
+           }
             
         }else{
             $response = array(

@@ -16,7 +16,7 @@ class MensajeModel extends Model
     protected $returnType     = 'array';
     protected $useSoftDeletes = false;
 
-    protected $allowedFields = ['mensaje', 'user_id', 'user_admin', 'revisado','titulo'];
+    protected $allowedFields = ['mensaje', 'user_id', 'user_admin', 'revisado','titulo', 'id_respond'];
 
      protected $useTimestamps = false;
      protected $createdField = 'fecha_creacion';
