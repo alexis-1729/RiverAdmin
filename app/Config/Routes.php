@@ -15,7 +15,8 @@ $routes = Services::routes();
  $routes -> setTranslateURIDashes(false);
  $routes -> set404Override();
 
-$routes->get('/', 'Registro::login');
+$routes -> get('/', 'Home::index'); 
+$routes->get('/RiverAdmin', 'Registro::login');
 $routes -> setAutoRoute(true);
 
  

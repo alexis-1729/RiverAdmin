@@ -13,9 +13,8 @@ class Home extends BaseController
 
     public function index(): string
     {
-        if(!isset($this->sesion->user_usuario)){return redirect()->to(base_url());}
-        return view('header')
-        . view('tables')
-        . view('footer');
+        return view('header-h')
+        .view('home-h')
+        .view('footer-h');
     }
 }

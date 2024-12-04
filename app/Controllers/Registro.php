@@ -396,7 +396,7 @@ class Registro extends BaseController
                        ];
                        $session = session();
                        $session ->set($datosSesion);
-                       return redirect()->to(base_url(). '/Home/index');
+                       return redirect()->to(base_url(). '/Dashboard/index');
                  }else{
                     $data['error'] = 'La contraseña no coincide';
                 echo view('login', $data);
