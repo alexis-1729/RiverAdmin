@@ -377,6 +377,9 @@ class Registro extends BaseController
 
     }
     public function login(){
+        if(isset($this->sesion->user_usuario)){return redirect()->to(base_url('/Dashboard'));}
+
+
         echo view('login');
     }
     
@@ -414,7 +417,7 @@ class Registro extends BaseController
     public function logout(){
         $sesion = session();
         $sesion ->destroy();
-        return redirect()->to(base_url());
+        return redirect()->to(base_url('/RiverAdmin'));
     }
 
     // public function cambiar_password(){
